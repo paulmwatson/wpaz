@@ -1,0 +1,90 @@
+version: "3.8"
+
+services:
+  web:
+    image: acrscratch.azurecr.io/test/web:v1
+    build: 
+      context: .
+      args:
+          RUBY_VERSION: '2.6.6'
+    command: ruby -rwebrick -e's=WEBrick::HTTPServer.new(:Port => 80, :DocumentRoot => Dir.pwd).start'
+    ports: 
+      - 80
+    volumes:
+      - data:/test
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.25'
+          memory: 0.5G
+        limits:
+          cpus: '0.25'
+          memory: 0.5G
+  
+  postgres:
+    image: postgres
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.25'
+          memory: 0.5G
+        limits:
+          cpus: '0.25'
+          memory: 0.5G
+  
+  redis:
+    image: redis:6.0-alpine
+    volumes:
+      - redis:/data
+    ports:
+      - 6379
+    healthcheck:
+      test: redis-cli ping
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.25'
+          memory: 0.5G
+        limits:
+          cpus: '0.25'
+          memory: 0.5G
+  
+  puppeteer:
+    image: zenato/puppeteer-renderer
+    ports:
+      - 3000
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.25'
+          memory: 0.5G
+        limits:
+          cpus: '0.25'
+          memory: 0.5G
+           
+        
+volumes:
+  redis:
+    driver: azure_file
+    driver_opts:
+      share_name: "aci-test-volume"
+      storage_account_name: acidockerstoragepmw
+  postgres:
+    driver: azure_file
+    driver_opts:
+      share_name: "aci-test-volume"
+      storage_account_name: acidockerstoragepmw
+  data:
+    driver: azure_file
+    driver_opts:
+      share_name: "aci-test-volume"
+      storage_account_name: acidockerstoragepmw
